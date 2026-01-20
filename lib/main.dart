@@ -1,62 +1,66 @@
 import 'package:flutter/material.dart';
+import 'package:projeto_final_flutter_2026/src/presenter/pages/login_page.dart';
+import 'package:projeto_final_flutter_2026/src/presenter/stores/login_store.dart';
+import 'package:provider/provider.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [ChangeNotifierProvider(create: (context) => LoginStore())],
+      child: const MainApp(),
+    ),
+  );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class MainApp extends StatefulWidget {
+  const MainApp({super.key});
 
-  // This widget is the root of your application.
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
+  State<MainApp> createState() => _MainAppState();
+}
+
+class _MainAppState extends State<MainApp> {
+  @override
+  void initState() {
+    super.initState();
+    // testar o encode/decode do protobuf
+    // testeProto();
   }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
+  void dispose() {
+    super.dispose(); // liberar recursos
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: LoginPage(),
     );
   }
 }
+
+
+  // void testeProto() {
+  //   try {
+  //     // criar um usuário
+  //     final user = User()
+  //       ..name = "Daniela"
+  //       ..email = "dani@email.com"
+  //       ..address = "Rua 1, do lado da rua 2";
+
+  //     // testar a serialização - (User -> Uint8List)
+  //     final encoded = UserAdapter.encodeProto(user);
+  //     debugPrint("Encoded: $encoded. Tamanho: ${encoded.length}");
+
+  //     // testar a desserialização - (Uint8List -> User)
+  //     final decoded = UserAdapter.decodeProto(encoded);
+  //     debugPrint(
+  //       "Decoded: \nname: ${decoded.name} \nemail: ${decoded.email} \naddress: ${decoded.address}",
+  //     );
+  //   } catch (e, st) {
+  //     debugPrint('Falha no autoteste do proto: $e');
+  //     debugPrint(st.toString());
+  //   }
+  // }
