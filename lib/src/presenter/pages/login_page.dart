@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:projeto_final_flutter_2026/src/presenter/stores/login_store.dart';
-import 'package:projeto_final_flutter_2026/src/presenter/pages/home/home_page.dart';
+import 'package:projeto_final_flutter_2026/src/presenter/pages/home_page.dart';
 import 'package:projeto_final_flutter_2026/src/presenter/stores/user_store.dart';
 import 'package:projeto_final_flutter_2026/src/presenter/pages/components/error_box.dart';
 

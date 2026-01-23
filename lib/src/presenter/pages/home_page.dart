@@ -1,7 +1,7 @@
 // HomePage com TabBar: available movies e movies rental by user
 import 'package:flutter/material.dart';
-import 'package:projeto_final_flutter_2026/src/presenter/pages/home/available_movies_tab.dart';
-import 'package:projeto_final_flutter_2026/src/presenter/pages/home/rental_movies_tab.dart';
+import 'package:projeto_final_flutter_2026/src/presenter/pages/components/available_movies_tab.dart';
+import 'package:projeto_final_flutter_2026/src/presenter/pages/components/rental_movies_tab.dart';
 import 'package:provider/provider.dart';
 import 'package:projeto_final_flutter_2026/src/presenter/stores/user_store.dart';
 import 'package:projeto_final_flutter_2026/src/presenter/stores/login_store.dart';
@@ -54,7 +54,7 @@ class _HomePageState extends State<HomePage> {
       child: Scaffold(
         appBar: AppBar(
           toolbarHeight: 64,
-          backgroundColor: const Color.fromARGB(255, 75, 3, 119), // cor roxa
+          backgroundColor: const Color.fromARGB(255, 23, 4, 65), // cor roxa
           foregroundColor: const Color.fromARGB(
             255,
             204,
@@ -132,7 +132,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         body: Container(
-          color: const Color.fromARGB(255, 34, 2, 53), // cor de fundo roxa
+          color: const Color.fromARGB(255, 21, 1, 32), // cor de fundo roxa
           child: const TabBarView(
             children: [AvailableMoviesTab(), RentalMoviesTab()],
           ),

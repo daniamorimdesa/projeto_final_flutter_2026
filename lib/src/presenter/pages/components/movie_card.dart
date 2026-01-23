@@ -1,7 +1,7 @@
 // movie_card.dart: componente para exibir um cartão de filme
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:projeto_final_flutter_2026/src/external/protos/packages.pb.dart';
-import 'package:provider/provider.dart';
 
 class MovieCard extends StatelessWidget {
   final Movie movie; // filme a ser exibido
@@ -17,23 +17,25 @@ class MovieCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final coverBytes = movie.coverImage; // obtém os bytes da imagem de capa
+    final coverBytes = Uint8List.fromList(
+      movie.cover,
+    ); // obtém os bytes da capa do filme
 
     return InkWell(
       // efeito de toque
       onTap: onTap, // chama o callback se fornecido
       borderRadius: BorderRadius.circular(
-        5,
+        2,
       ), // bordas arredondadas para o efeito de toque
       child: Container(
         padding: const EdgeInsets.all(14), // padding interno
         decoration: BoxDecoration(
           // decoração do cartão
           color: const Color.fromARGB(255, 0, 0, 0), // fundo do cartão
-          borderRadius: BorderRadius.circular(5), // bordas arredondadas
+          borderRadius: BorderRadius.circular(2), // bordas arredondadas
           border: Border.all(
             color: const Color.fromARGB(255, 255, 255, 255),
-            width: 1,
+            width: 0.5,
           ), // borda do cartão
         ),
         child: Column(
@@ -42,11 +44,11 @@ class MovieCard extends StatelessWidget {
               // expande para preencher o espaço disponível
               child: ClipRRect(
                 // recorta o conteúdo com bordas arredondadas
-                borderRadius: BorderRadius.circular(5), // bordas arredondadas
+                borderRadius: BorderRadius.circular(2), // bordas arredondadas
                 child: coverBytes.isNotEmpty
                     ? Image.memory(
                         coverBytes,
-                        fit: BoxFit.cover, // cobre todo o espaço disponível
+                        fit: BoxFit.contain, // mantém proporção da imagem
                         width: double.infinity, // largura máxima
                         // evita "quebrar" se os bytes estiverem ruins
                         errorBuilder: (_, __, ___) => Container(
@@ -70,6 +72,7 @@ class MovieCard extends StatelessWidget {
                           size: 36,
                         ),
                       ),
+              ),
             ),
             const SizedBox(height: 10), // espaçamento entre a imagem e o rodapé
             footer,
