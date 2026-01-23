@@ -1,10 +1,19 @@
+// main.dart: ponto de entrada da aplicação Flutter
 import 'package:flutter/material.dart';
 import 'package:projeto_final_flutter_2026/src/presenter/pages/login_page.dart';
 import 'package:projeto_final_flutter_2026/src/presenter/stores/login_store.dart';
 import 'package:projeto_final_flutter_2026/src/presenter/stores/user_store.dart';
 import 'package:provider/provider.dart';
+import 'package:window_manager/window_manager.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Configurar tamanho mínimo da janela
+  await windowManager.ensureInitialized();
+  
+  await windowManager.setMinimumSize(const Size(1050, 650)); // tamanho mínimo da janela
+  
   runApp(
     MultiProvider(
       providers: [

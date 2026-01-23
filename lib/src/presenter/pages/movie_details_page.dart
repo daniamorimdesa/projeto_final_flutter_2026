@@ -1,4 +1,4 @@
-// movie_details_page.dart
+// movie_details_page.dart : Página de detalhes do filme
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -15,162 +15,215 @@ class MovieDetailsPage extends StatelessWidget {
     final store = context.watch<UserStore>();
     final coverBytes = Uint8List.fromList(movie.cover);
 
-    const pageBg1 = Color(0xFF14001F);
-    const pageBg2 = Color(0xFF06000D);
+    const pageBg1 = Color.fromARGB(255, 30, 1, 46);
+    const pageBg2 = Color.fromARGB(255, 0, 0, 0);
 
-    // dentro do build, no lugar do Center/ConstrainedBox/Container
     return Scaffold(
       body: Container(
-        width: double.infinity,
-        height: double.infinity,
+        // fundo com gradiente
+        width: double.infinity, // largura total
+        height: double.infinity, // altura total
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF14001F), Color(0xFF06000D)],
+            colors: [pageBg1, pageBg2],
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 56),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // poster
-              SizedBox(
-                width: 520,
-                child: AspectRatio(
-                  aspectRatio: 3 / 4,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(18),
-                    child: coverBytes.isNotEmpty
-                        ? Image.memory(coverBytes, fit: BoxFit.cover)
-                        : _fallback(),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final w = constraints.maxWidth;
+
+            // Escala responsiva baseada em 1600px (telas grandes)
+            // Notebook: 1366px → s ≈ 0.85
+            // Monitor Full HD: 1920px → s ≈ 1.2
+            final s = (w / 1600).clamp(0.7, 1.15);
+
+            // Valores responsivos
+            final hPad = (90 * s).clamp(24.0, 110.0); // padding horizontal
+            final vPad = (30 * s).clamp(20.0, 65.0); // padding vertical
+            final gap = (34 * s).clamp(16.0, 44.0); // espaçamento entre poster e infos
+            final posterW = (500 * s).clamp(280.0, 680.0); // largura do poster
+            final titleTop = (100 * s).clamp(20.0, 130.0); // espaço acima do título
+            final titleSize = (88 * s).clamp(36.0, 105.0); // tamanho da fonte do título
+            final titleLetter = (-5 * s).clamp(-7.0, -2.0); // espaçamento entre letras do título
+            final bodySize = (16 * s).clamp(13.0, 22.0); // tamanho da fonte do corpo do texto
+            final infoLabelSize = (12 * s).clamp(11.0, 17.0); // tamanho da fonte do rótulo das infos
+            final infoValueSize = (16 * s).clamp(12.0, 18.0); // tamanho da fonte do valor das infos
+            final buttonW = (360 * s).clamp(200.0, 420.0); // largura dos botões
+            final buttonH = (90 * s).clamp(52.0, 105.0); // altura dos botões
+            final buttonFont = (19 * s).clamp(13.0, 22.0); // tamanho da fonte dos botões
+            final buttonGap = (28 * s).clamp(12.0, 36.0); // espaçamento entre os botões
+            final infoSpacing = (32 * s).clamp(20.0, 42.0); // espaçamento entre linhas de info
+            final posterVPad = (20 * s).clamp(16.0, 50.0); // padding vertical do poster
+            
+
+            return SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // poster
+                  Padding(
+                    padding: EdgeInsets.symmetric(vertical: posterVPad),
+                    child: SizedBox(
+                      width: posterW,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(2),
+                        child: coverBytes.isNotEmpty
+                            ? Image.memory(coverBytes, fit: BoxFit.contain)
+                            : _fallback(),
+                      ),
+                    ),
                   ),
-                ),
-              ),
 
-              const SizedBox(width: 72),
+                  SizedBox(width: gap),
 
-              // infos
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      movie.title.toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 72,
-                        fontWeight: FontWeight.w300,
-                        letterSpacing: 1.6,
-                        height: 1.05,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 900),
-                      child: Text(
-                        movie.sinopse,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 18,
-                          height: 1.65,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    // infos uma embaixo da outra
-                    _InfoLine(label: "DIRECTOR", value: movie.director),
-                    const SizedBox(height: 10),
-                    _InfoLine(label: "YEAR", value: movie.year),
-                    const SizedBox(height: 10),
-                    _InfoLine(
-                      label: "PRICE",
-                      value: "R\$ ${movie.value.toStringAsFixed(2)}",
-                    ),
-
-                    const SizedBox(height: 38),
-
-                    // botões (como no mock: grandes e centralizados na área)
-                    Row(
+                  // infos
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SizedBox(
-                          width: 360,
-                          height: 60,
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.pop(context),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white70,
-                              side: BorderSide(
-                                color: Colors.white.withOpacity(0.35),
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                            ),
-                            child: const Text("cancel"),
+                        SizedBox(height: titleTop),
+                        Text(
+                          movie.title.toUpperCase(),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: titleSize,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: titleLetter,
+                            height: 0.92,
                           ),
                         ),
-                        const SizedBox(width: 26),
-                        SizedBox(
-                          width: 360,
-                          height: 60,
-                          child: ElevatedButton(
-                            onPressed: store.isRenting
-                                ? null
-                                : () async {
-                                    final ok = await context
-                                        .read<UserStore>()
-                                        .rentalMovie(movie);
-                                    if (!context.mounted) return;
+                        SizedBox(height: (8 * s).clamp(6.0, 10.0)),
 
-                                    if (ok) {
-                                      Navigator.pop(context);
-                                    } else if (context
-                                        .read<UserStore>()
-                                        .errorMessage
-                                        .isNotEmpty) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            context
-                                                .read<UserStore>()
-                                                .errorMessage,
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: const Color(0xFF4B0377),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(999),
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: (1000 * s).clamp(500.0, 1200.0),
+                          ),
+                          child: Text(
+                            movie.sinopse,
+                            textAlign: TextAlign.justify,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: bodySize,
+                              height: 1.5,
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(height: infoSpacing),
+
+                        _InfoLine(
+                          label: "DIRECTOR",
+                          value: movie.director,
+                          labelSize: infoLabelSize,
+                          valueSize: infoValueSize,
+                        ),
+                        SizedBox(height: (10 * s).clamp(6.0, 12.0)),
+                        _InfoLine(
+                          label: "YEAR",
+                          value: movie.year,
+                          labelSize: infoLabelSize,
+                          valueSize: infoValueSize,
+                        ),
+                        SizedBox(height: (10 * s).clamp(6.0, 12.0)),
+                        _InfoLine(
+                          label: "PRICE",
+                          value: "R\$ ${movie.value.toStringAsFixed(2)}",
+                          labelSize: infoLabelSize,
+                          valueSize: infoValueSize,
+                        ),
+
+                        SizedBox(height: (32 * s).clamp(24.0, 40.0)),
+
+                        // botões
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: buttonW,
+                              height: buttonH,
+                              child: OutlinedButton(
+                                onPressed: () => Navigator.pop(context),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.white70,
+                                  side: BorderSide(
+                                    color: Colors.white.withOpacity(0.35),
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                ),
+                                child: Text(
+                                  "cancel",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: buttonFont),
+                                ),
                               ),
                             ),
-                            child: store.isRenting
-                                ? const SizedBox(
-                                    height: 22,
-                                    width: 22,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Text("rental"),
-                          ),
+                            SizedBox(width: buttonGap),
+                            SizedBox(
+                              width: buttonW,
+                              height: buttonH,
+                              child: ElevatedButton(
+                                onPressed: store.isRenting
+                                    ? null
+                                    : () async {
+                                        final ok = await context
+                                            .read<UserStore>()
+                                            .rentalMovie(movie);
+                                        if (!context.mounted) return;
+
+                                        if (ok) {
+                                          Navigator.pop(context);
+                                        } else if (context
+                                            .read<UserStore>()
+                                            .errorMessage
+                                            .isNotEmpty) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                context
+                                                    .read<UserStore>()
+                                                    .errorMessage,
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: const Color(0xFF4B0377),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                ),
+                                child: store.isRenting
+                                    ? SizedBox(
+                                        height: (22 * s).clamp(18.0, 24.0),
+                                        width: (22 * s).clamp(18.0, 24.0),
+                                        child: const CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : Text(
+                                        "rental",
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(fontSize: buttonFont),
+                                      ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -190,8 +243,15 @@ class MovieDetailsPage extends StatelessWidget {
 class _InfoLine extends StatelessWidget {
   final String label;
   final String value;
+  final double labelSize;
+  final double valueSize;
 
-  const _InfoLine({required this.label, required this.value});
+  const _InfoLine({
+    required this.label,
+    required this.value,
+    required this.labelSize,
+    required this.valueSize,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -201,13 +261,19 @@ class _InfoLine extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.45),
-            fontSize: 12,
+            color: const Color.fromARGB(255, 141, 89, 209),
+            fontSize: labelSize,
             letterSpacing: 1.2,
           ),
         ),
         const SizedBox(height: 2),
-        Text(value, style: const TextStyle(color: Colors.white, fontSize: 16)),
+        Text(
+          value,
+          style: TextStyle(
+            color: const Color.fromARGB(255, 228, 222, 222),
+            fontSize: valueSize,
+          ),
+        ),
       ],
     );
   }
