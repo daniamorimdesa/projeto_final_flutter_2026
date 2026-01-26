@@ -1,7 +1,7 @@
 // available_movies_tab.dart: Aba para exibir filmes disponíveis para aluguel
 import 'package:flutter/material.dart';
-import 'package:projeto_final_flutter_2026/src/presenter/pages/movie_details_page.dart';
 import 'package:provider/provider.dart';
+import 'package:projeto_final_flutter_2026/src/presenter/pages/movie_details_page.dart';
 import 'package:projeto_final_flutter_2026/src/presenter/pages/components/movies_grid.dart';
 import 'package:projeto_final_flutter_2026/src/presenter/stores/user_store.dart';
 
@@ -65,7 +65,7 @@ class AvailableMoviesTab extends StatelessWidget {
           // abre a tela de detalhes
           await Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => MovieDetailsPage(movie: movie)),
+            MaterialPageRoute(builder: (_) => MovieDetailsPage(movie: movie, mode: MoveDetailsMode.rental)),
           );
         },
       ),
