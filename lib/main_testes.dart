@@ -11,7 +11,7 @@ import 'package:provider/provider.dart';
 void main() {
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider(create: (context) => LoginStore())],
+      providers: [Provider<LoginStore>(create: (_) => LoginStore())],
       child: const MainApp(),
     ),
   );
@@ -70,9 +70,9 @@ void testeProto() {
   }
 }
 
-Future<User?> testeLogin() async{
-    // 1) login do usuário para obter user com id
-    User? user;
+Future<User?> testeLogin() async {
+  // 1) login do usuário para obter user com id
+  User? user;
   try {
     final credentials = User()
       ..username = "joao"
@@ -88,7 +88,7 @@ Future<User?> testeLogin() async{
 }
 
 Future<void> testeAvailableMovies() async {
-    // 2) Filmes disponíveis - available-movies
+  // 2) Filmes disponíveis - available-movies
   try {
     final movies = await MoviesDatasource().getAvailableMovies();
     debugPrint("Quantidade de filmes: ${movies.length}");
@@ -100,7 +100,7 @@ Future<void> testeAvailableMovies() async {
 }
 
 Future<void> testeMoviesRentalsbyUser(User user) async {
-    // 3) Filmes alugados pelo usuário - movies-rental-by-user
+  // 3) Filmes alugados pelo usuário - movies-rental-by-user
   try {
     final rentals = await MoviesDatasource().getMoviesRentalByUser(user);
     debugPrint("Quantidade de filmes alugados pelo usuário: ${rentals.length}");
@@ -113,9 +113,12 @@ Future<void> testeMoviesRentalsbyUser(User user) async {
 }
 
 Future<void> testeRentalMovie(int userId) async {
-    // 4) Alugar um filme - rental-movie
+  // 4) Alugar um filme - rental-movie
   try {
-    final success = await MoviesDatasource().rentalMovie(userId, 1); // alugar filme com id 1
+    final success = await MoviesDatasource().rentalMovie(
+      userId,
+      1,
+    ); // alugar filme com id 1
     if (success) {
       debugPrint("Filme alugado com sucesso!");
     } else {
@@ -127,9 +130,12 @@ Future<void> testeRentalMovie(int userId) async {
 }
 
 Future<void> testeWatchMovie(int userId) async {
-    // 5) Marcar filme como assistido - watch-movie
+  // 5) Marcar filme como assistido - watch-movie
   try {
-    final success = await MoviesDatasource().watchMovie(userId, 1); // assistir filme com id 1
+    final success = await MoviesDatasource().watchMovie(
+      userId,
+      1,
+    ); // assistir filme com id 1
     if (success) {
       debugPrint("Filme marcado como assistido com sucesso!");
     } else {

@@ -1,31 +1,71 @@
-// login_store.dart: gerencia o estado de login do usuário usando ChangeNotifier
-import 'package:flutter/material.dart';
+// login_store.dart: gerencia o estado de login do usuário usando MobX
+import 'package:mobx/mobx.dart';
+import 'package:flutter/foundation.dart'; // debugPrint
 import 'package:projeto_final_flutter_2026/src/external/datasources/user_datasource.dart';
 import 'package:projeto_final_flutter_2026/src/external/protos/packages.pb.dart';
 
-class LoginStore extends ChangeNotifier {
-  var _user = User(); // variável privada para armazenar o usuário
-  User get user => _user; // getter para acessar o usuário
+// para gerar esse aquivo, rode:dart run build_runner build --delete-conflicting-outputs
+// ou dart run build_runner watch --delete-conflicting-outputs
+part 'login_store.g.dart';
 
-  String errorMessage = ""; // variável para armazenar mensagens de erro
+class LoginStore = _LoginStoreBase with _$LoginStore;
 
-  // método login para realizar o login do usuário
+abstract class _LoginStoreBase with Store {
+  // variável privada para armazenar o usuário
+  @observable
+  User _user = User();
+
+  // getter para acessar o usuário
+  User get user => _user;
+
+  // variável para armazenar mensagens de erro
+  @observable
+  String errorMessage = "";
+
+  // computed property para verificar se há erro
+  @computed
+  bool get hasError => errorMessage.isNotEmpty;
+
+  // computed property para verificar se o usuário está logado
+  @computed
+  bool get isLoggedIn => _user.username.isNotEmpty;
+
+  // isLoading para indicar que o login está em andamento
+  @observable
+  bool isLoading = false;
+
+  // método para realizar o login do usuário
+  @action
   Future<bool> login(String username, String password) async {
-    User user = User()
+    // prevenir múltiplos logins simultâneos
+    if (isLoading) return false;
+
+    // ligar loading
+    isLoading = true;
+    // limpar erro antes de tentar logar
+    errorMessage = "";
+
+    // cria o objeto User para a requisição
+    final requestUser = User()
       ..username = username
       ..password = password;
+
     try {
-      final userResponse = await UserDatasource().login(
-        user,
-      ); // busca informações do usuário
+      // busca informações do usuário
+      final userResponse = await UserDatasource().login(requestUser);
+
+      // atualiza o estado com o usuário logado
       _user = userResponse;
-      errorMessage =
-          ""; // limpa a mensagem de erro quando o login é bem-sucedido
-      notifyListeners();
-      return true; // retorna verdadeiro se o login for bem-sucedido
+
+      // limpa a mensagem de erro quando o login é bem-sucedido
+      errorMessage = "";
+      return true;
     } catch (e) {
       debugPrint("Login error: $e");
+
+      // trata mensagens de erro específicas
       final msg = e.toString().toLowerCase();
+
       if (msg.contains("credenciais inválidas") || msg.contains("401")) {
         errorMessage = "Usuário ou senha inválidos. Tente novamente.";
       } else if (msg.contains("conectar ao servidor") ||
@@ -35,21 +75,22 @@ class LoginStore extends ChangeNotifier {
       } else {
         errorMessage = "Ocorreu um erro ao tentar entrar. Tente novamente.";
       }
-      notifyListeners(); // notifica para atualizar a UI
-      return false; // retorna falso se ocorrer um erro
+      return false;
+    } finally {
+      isLoading = false; // desligar loading
     }
   }
 
-  // método logout para limpar o estado do usuário
+  // método para limpar o estado do usuário
+  @action
   void logout() {
-    _user = User(); // reseta o usuário
-    errorMessage = ""; // limpa mensagens de erro
-    notifyListeners();
+    _user = User();
+    errorMessage = "";
   }
 
   // método para limpar a mensagem de erro
+  @action
   void clearError() {
     errorMessage = "";
-    notifyListeners();
   }
 }

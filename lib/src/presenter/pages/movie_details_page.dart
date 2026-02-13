@@ -2,6 +2,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:projeto_final_flutter_2026/src/external/protos/packages.pb.dart';
 import 'package:projeto_final_flutter_2026/src/presenter/stores/user_store.dart';
 
@@ -22,7 +23,7 @@ class MovieDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final store = context.watch<UserStore>();
+    final store = context.read<UserStore>();
     final coverBytes = Uint8List.fromList(movie.cover);
 
     const pageBg1 = Color.fromARGB(255, 30, 1, 46);
@@ -48,11 +49,6 @@ class MovieDetailsPage extends StatelessWidget {
             // rótulo do botão principal
             final primaryLabel = isRentalMode ? "rental" : "watch";
 
-            // estado de carregamento do botão principal
-            final primaryLoading = isRentalMode
-                ? store.isRenting
-                : store.isWatching;
-
             Future<void> onPrimaryPressed() async {
               if (isRentalMode) {
                 final ok = await context.read<UserStore>().rentalMovie(
@@ -67,7 +63,12 @@ class MovieDetailsPage extends StatelessWidget {
                     // mostrar erro se houver
                     SnackBar(
                       behavior: SnackBarBehavior.floating,
-                      backgroundColor: const Color.fromARGB(255, 255, 255, 255), // claro elegante
+                      backgroundColor: const Color.fromARGB(
+                        255,
+                        255,
+                        255,
+                        255,
+                      ), // claro elegante
                       elevation: 8,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -76,7 +77,12 @@ class MovieDetailsPage extends StatelessWidget {
                       content: Text(
                         context.read<UserStore>().errorMessage,
                         style: const TextStyle(
-                          color: Color.fromARGB(255, 57, 4, 90), // roxo do seu tema
+                          color: Color.fromARGB(
+                            255,
+                            57,
+                            4,
+                            90,
+                          ), // roxo do seu tema
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -164,147 +170,163 @@ class MovieDetailsPage extends StatelessWidget {
 
             return SingleChildScrollView(
               padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // poster
-                  Padding(
-                    padding: EdgeInsets.symmetric(vertical: posterVPad),
-                    child: SizedBox(
-                      width: posterW,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(2),
-                        child: coverBytes.isNotEmpty
-                            ? Image.memory(coverBytes, fit: BoxFit.contain)
-                            : _fallback(),
+              child: Observer(
+                builder: (_) {
+                  // estado de carregamento do botão principal (dentro do Observer)
+                  final primaryLoading = isRentalMode
+                      ? store.isRenting
+                      : store.isWatching;
+
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // poster
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: posterVPad),
+                        child: SizedBox(
+                          width: posterW,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(2),
+                            child: coverBytes.isNotEmpty
+                                ? Image.memory(coverBytes, fit: BoxFit.contain)
+                                : _fallback(),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
 
-                  SizedBox(width: gap),
+                      SizedBox(width: gap),
 
-                  // infos
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: titleTop),
-                        Text(
-                          movie.title.toUpperCase(),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: titleSize,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: titleLetter,
-                            height: 0.92,
-                          ),
-                        ),
-                        SizedBox(height: (8 * s).clamp(6.0, 10.0)),
-
-                        ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxWidth: (1000 * s).clamp(500.0, 1200.0),
-                          ),
-                          child: Text(
-                            movie.sinopse,
-                            textAlign: TextAlign.justify,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: bodySize,
-                              height: 1.5,
-                            ),
-                          ),
-                        ),
-
-                        SizedBox(height: infoSpacing),
-
-                        _InfoLine(
-                          label: "DIRECTOR",
-                          value: movie.director,
-                          labelSize: infoLabelSize,
-                          valueSize: infoValueSize,
-                        ),
-                        SizedBox(height: (10 * s).clamp(6.0, 12.0)),
-                        _InfoLine(
-                          label: "YEAR",
-                          value: movie.year,
-                          labelSize: infoLabelSize,
-                          valueSize: infoValueSize,
-                        ),
-                        SizedBox(height: (10 * s).clamp(6.0, 12.0)),
-                        _InfoLine(
-                          label: "PRICE",
-                          value: "R\$ ${movie.value.toStringAsFixed(2)}",
-                          labelSize: infoLabelSize,
-                          valueSize: infoValueSize,
-                        ),
-
-                        SizedBox(height: (32 * s).clamp(24.0, 40.0)),
-
-                        // botões
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                      // infos
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            SizedBox(
-                              width: buttonW,
-                              height: buttonH,
-                              child: OutlinedButton(
-                                onPressed: () {
-                                  context.read<UserStore>().clearError();
-                                  Navigator.pop(context);
-                                },
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.white70,
-                                  side: BorderSide(
-                                    color: Colors.white.withOpacity(0.35),
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(999),
-                                  ),
-                                ),
-                                child: Text(
-                                  "cancel",
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(fontSize: buttonFont),
+                            SizedBox(height: titleTop),
+                            Text(
+                              movie.title.toUpperCase(),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: titleSize,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: titleLetter,
+                                height: 0.92,
+                              ),
+                            ),
+                            SizedBox(height: (8 * s).clamp(6.0, 10.0)),
+
+                            ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: (1000 * s).clamp(500.0, 1200.0),
+                              ),
+                              child: Text(
+                                movie.sinopse,
+                                textAlign: TextAlign.justify,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: bodySize,
+                                  height: 1.5,
                                 ),
                               ),
                             ),
-                            SizedBox(width: buttonGap),
-                            SizedBox(
-                              width: buttonW,
-                              height: buttonH,
-                              child: ElevatedButton(
-                                onPressed: primaryLoading
-                                    ? null
-                                    : () => onPrimaryPressed(),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: const Color(0xFF4B0377),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(999),
+
+                            SizedBox(height: infoSpacing),
+
+                            _InfoLine(
+                              label: "DIRECTOR",
+                              value: movie.director,
+                              labelSize: infoLabelSize,
+                              valueSize: infoValueSize,
+                            ),
+                            SizedBox(height: (10 * s).clamp(6.0, 12.0)),
+                            _InfoLine(
+                              label: "YEAR",
+                              value: movie.year,
+                              labelSize: infoLabelSize,
+                              valueSize: infoValueSize,
+                            ),
+                            SizedBox(height: (10 * s).clamp(6.0, 12.0)),
+                            _InfoLine(
+                              label: "PRICE",
+                              value: "R\$ ${movie.value.toStringAsFixed(2)}",
+                              labelSize: infoLabelSize,
+                              valueSize: infoValueSize,
+                            ),
+
+                            SizedBox(height: (32 * s).clamp(24.0, 40.0)),
+
+                            // botões
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: buttonW,
+                                  height: buttonH,
+                                  child: OutlinedButton(
+                                    onPressed: () {
+                                      context.read<UserStore>().clearError();
+                                      Navigator.pop(context);
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.white70,
+                                      side: BorderSide(
+                                        color: Colors.white.withOpacity(0.35),
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          999,
+                                        ),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      "cancel",
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(fontSize: buttonFont),
+                                    ),
                                   ),
                                 ),
-                                child: primaryLoading
-                                    ? SizedBox(
-                                        height: (22 * s).clamp(18.0, 24.0),
-                                        width: (22 * s).clamp(18.0, 24.0),
-                                        child: const CircularProgressIndicator(
-                                          strokeWidth: 2,
+                                SizedBox(width: buttonGap),
+                                SizedBox(
+                                  width: buttonW,
+                                  height: buttonH,
+                                  child: ElevatedButton(
+                                    onPressed: primaryLoading
+                                        ? null
+                                        : () => onPrimaryPressed(),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: const Color(0xFF4B0377),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          999,
                                         ),
-                                      )
-                                    : Text(
-                                        primaryLabel,
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(fontSize: buttonFont),
                                       ),
-                              ),
+                                    ),
+                                    child: primaryLoading
+                                        ? SizedBox(
+                                            height: (22 * s).clamp(18.0, 24.0),
+                                            width: (22 * s).clamp(18.0, 24.0),
+                                            child:
+                                                const CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                ),
+                                          )
+                                        : Text(
+                                            primaryLabel,
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              fontSize: buttonFont,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                ],
+                      ),
+                    ],
+                  );
+                },
               ),
             );
           },

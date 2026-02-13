@@ -8,17 +8,19 @@ import 'package:window_manager/window_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Configurar tamanho mínimo da janela
   await windowManager.ensureInitialized();
-  
-  await windowManager.setMinimumSize(const Size(1050, 670)); // tamanho mínimo da janela
-  
+
+  await windowManager.setMinimumSize(
+    const Size(1050, 670),
+  ); // tamanho mínimo da janela
+
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => UserStore()),
-        ChangeNotifierProvider(create: (context) => LoginStore()),
+        Provider<LoginStore>(create: (_) => LoginStore()),
+        Provider<UserStore>(create: (_) => UserStore()),
       ],
       child: const MainApp(),
     ),

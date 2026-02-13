@@ -1,188 +1,222 @@
-// user_store.dart
-import 'package:flutter/material.dart';
+// user_store.dart: store de usuário usando MobX
+import 'package:mobx/mobx.dart';
+import 'package:flutter/foundation.dart';
+
 import 'package:projeto_final_flutter_2026/src/external/datasources/movies_datasource.dart';
 import 'package:projeto_final_flutter_2026/src/external/protos/packages.pb.dart';
 
-class UserStore extends ChangeNotifier {
-  var _user = User(); // variável privada para armazenar o usuário
-  User get user => _user; // getter para acessar o usuário
+part 'user_store.g.dart';
 
-  // instâncias dos datasources para reutilização
+class UserStore = _UserStoreBase with _$UserStore;
+
+abstract class _UserStoreBase with Store {
+  // instância do datasource para reutilização
   final _moviesDs = MoviesDatasource();
 
-  // váriavel para guardar a lista de filmes disponíveis
-  List<Movie> availableMovies = [];
+  // ---------------- USER ----------------
 
-  // variável para guardar a lista de filmes alugados pelo usuário
-  List<Movie> rentalMovies = [];
+  @observable
+  User _user = User();
 
-  // variáveis para indicar se uma operação está em andamento
+  User get user => _user;
+
+  // computed property para verificar se o usuário está autenticado
+  @computed
+  bool get isAuthenticated => _user.id != 0;
+
+  // ---------------- LISTAS ----------------
+
+  //lista de filmes disponíveis para aluguel
+  @observable
+  ObservableList<Movie> availableMovies = ObservableList<Movie>();
+
+  //lista de filmes alugados pelo usuário
+  @observable
+  ObservableList<Movie> rentalMovies = ObservableList<Movie>();
+
+  // ---------------- FLAGS ----------------
+
+  // flags para indicar se uma operação está em andamento
+  @observable
   bool isLoadingAvailable = false;
+
+  @observable
   bool isLoadingRental = false;
+
+  @observable
   bool isRenting = false;
+
+  @observable
   bool isWatching = false;
 
-  // variável para armazenar mensagens de erro
+  // ---------------- ERROR ----------------
+
+  @observable
   String errorMessage = "";
 
-  // método para limpar mensagem de erro
+  // computed property para verificar se há erro
+  @computed
+  bool get hasError => errorMessage.isNotEmpty;
+
+  // ---------------- ACTIONS ----------------
+
+  // ação para limpar mensagem de erro
+  @action
   void clearError() {
     errorMessage = "";
-    notifyListeners();
   }
 
-  // método para salvar o user no estado e notificar UI
+  // ação para salvar o user no estado
+  @action
   void initUser(User user) {
+    // atualizar o usuário logado
     _user = user;
+
     // limpar estado de filmes
-    availableMovies = [];
-    rentalMovies = [];
+    availableMovies.clear();
+    rentalMovies.clear();
+
+    // resetar erro e flags de loading
     errorMessage = "";
-    // resetar flags de loading
     isLoadingAvailable = false;
     isLoadingRental = false;
     isRenting = false;
     isWatching = false;
-    notifyListeners();
   }
 
-  // método para buscar filmes disponíveis
+  // ação para buscar filmes disponíveis
+  @action
   Future<void> getAvailableMovies() async {
     // ligar loading da aba "available"
     isLoadingAvailable = true;
-    notifyListeners(); // notificar UI
 
     try {
       //chamar datasource para buscar filmes disponíveis
       final movies = await _moviesDs.getAvailableMovies();
-      availableMovies = movies; // salvar filmes no estado
+
+      // atualizar a lista de filmes disponíveis no estado
+      availableMovies
+        ..clear()
+        ..addAll(
+          movies,
+        ); // usar clear + addAll para manter a mesma instância da ObservableList
+
       errorMessage = ""; // limpar erro apenas em caso de sucesso
     } catch (e) {
-      errorMessage = e.toString(); // salvar mensagem de erro
+      errorMessage = e.toString();
+      debugPrint("Available movies error: $e");
     } finally {
-      // desligar loading da aba "available"
-      isLoadingAvailable = false;
-      notifyListeners(); // notificar UI
+      isLoadingAvailable = false; // desligar loading da aba "available"
     }
   }
 
-  // método para buscar filmes alugados pelo usuário
+  // ação para buscar filmes alugados pelo usuário
+  @action
   Future<void> getRentalMovies() async {
     //verificar se o usuário está autenticado
-    if (user.id == 0) {
+    if (!isAuthenticated) {
       errorMessage = "Usuário não autenticado";
-      notifyListeners();
       return;
     }
 
-    // ligar loading da aba "rental"
-    isLoadingRental = true;
-    notifyListeners(); // notificar UI
+    isLoadingRental = true; // ligar loading da aba "rental"
 
     try {
       errorMessage = ""; // limpar erro antes de começar
       // chamar datasource para buscar filmes alugados pelo usuário
-      final movies = await _moviesDs.getMoviesRentalByUser(user);
-      rentalMovies = movies; // salvar filmes alugados no estado
+      final movies = await _moviesDs.getMoviesRentalByUser(_user);
+
+      rentalMovies
+        ..clear()
+        ..addAll(
+          movies,
+        ); // usar clear + addAll para manter a mesma instância da ObservableList
     } catch (e) {
-      errorMessage = e.toString(); // salvar mensagem de erro
+      errorMessage = e.toString();
+      debugPrint("Rental movies error: $e");
     } finally {
-      // desligar loading da aba "rental"
-      isLoadingRental = false;
-      notifyListeners(); // notificar UI
+      isLoadingRental = false; // desligar loading da aba "rental"
     }
   }
 
-  // método para alugar um filme para o usuário
+  // ação para alugar um filme para o usuário
+  @action
   Future<bool> rentalMovie(Movie movie) async {
     // verificar se o usuário está autenticado
-    if (user.id == 0) {
+    if (!isAuthenticated) {
       errorMessage = "Usuário não autenticado";
-      notifyListeners();
       return false;
     }
 
-    errorMessage = ""; // limpar mensagem de erro
-    notifyListeners();
+    // prevenir aluguel de um filme que já foi alugado
+    if (rentalMovies.any((m) => m.id == movie.id)) {
+      errorMessage =
+          "Este filme já foi alugado. Acesse a aba de filmes alugados para assisti-lo :)";
+      return false;
+    }
+
+    isRenting = true; // ligar loading da ação de aluguel
+    errorMessage = ""; // limpar erro antes de começar
 
     try {
-      // checar se filme já está alugado
-      if (rentalMovies.any((m) => m.id == movie.id)) {
-        errorMessage = "Este filme já foi alugado. Acesse a aba de filmes alugados para assisti-lo :)";
-        notifyListeners();
-        return false;
-      }
+      // chamar datasource para alugar o filme para o usuário
+      final success = await _moviesDs.rentalMovie(_user.id, movie.id);
 
-      // ligar loading de aluguel
-      isRenting = true;
-      notifyListeners();
-
-      // chamar datasource para alugar o filme
-      final success = await _moviesDs.rentalMovie(user.id, movie.id);
-
-      // se deu certo, recarregar lista de filmes alugados e filmes disponíveis
       if (success) {
-        await getRentalMovies();
-        await getAvailableMovies();
-        return true;
-      } else {
-        return false;
+        await getRentalMovies(); // atualizar filmes alugados
+        await getAvailableMovies(); // atualizar filmes disponíveis (pode ter mudado a disponibilidade)
       }
+
+      return success;
     } catch (e) {
       errorMessage = e.toString();
       return false;
     } finally {
-      // desligar loading de aluguel
       isRenting = false;
-      notifyListeners();
     }
   }
 
-  // método para marcar um filme como assistido
+  // ação para assistir a um filme alugado
+  @action
   Future<bool> watchMovie(Movie movie) async {
     // verificar se o usuário está autenticado
-    if (user.id == 0) {
+    if (!isAuthenticated) {
       errorMessage = "Usuário não autenticado";
-      notifyListeners();
       return false;
     }
 
-    // ligar loading de "assistir"
-    isWatching = true;
-    notifyListeners();
+    isWatching = true; // ligar loading da ação de assistir
+    errorMessage = ""; // limpar erro antes de começar
 
     try {
-      errorMessage = "";
-      // chamar datasource para assistir o filme
-      final success = await _moviesDs.watchMovie(user.id, movie.id);
+      // chamar datasource para assistir ao filme
+      final success = await _moviesDs.watchMovie(_user.id, movie.id);
 
-      // se deu certo, recarregar lista de filmes alugados e filmes disponíveis
       if (success) {
-        await getRentalMovies();
-        await getAvailableMovies();
-        return true;
-      } else {
-        return false;
+        await getRentalMovies(); // atualizar filmes alugados
+        await getAvailableMovies(); // atualizar filmes disponíveis (pode ter mudado a disponibilidade)
       }
+
+      return success;
     } catch (e) {
       errorMessage = e.toString();
       return false;
     } finally {
-      // desligar loading de "assistir"
-      isWatching = false;
-      notifyListeners();
+      isWatching = false; // desligar loading da ação de assistir
     }
   }
 
-  // método para limpar listas quando fizer logout
+  // ação para limpar todos os dados do usuário ao fazer logout
+  @action
   void clearDataOnLogout() {
-    availableMovies = [];
-    rentalMovies = [];
+    availableMovies.clear();
+    rentalMovies.clear();
+
     isLoadingAvailable = false;
     isLoadingRental = false;
     isRenting = false;
     isWatching = false;
+
     errorMessage = "";
-    notifyListeners();
   }
 }

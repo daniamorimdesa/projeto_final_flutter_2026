@@ -1,11 +1,13 @@
-// login_page.dart: Página de login com campos para nome de usuário e senha
+// login_mobx_page.dart: Página de login com campos para nome de usuário e senha usando MobX para gerenciamento de estado
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:projeto_final_flutter_2026/src/presenter/stores/login_store.dart';
+import 'package:flutter_mobx/flutter_mobx.dart';
+
 import 'package:projeto_final_flutter_2026/src/presenter/pages/home_page.dart';
-import 'package:projeto_final_flutter_2026/src/presenter/stores/user_store.dart';
 import 'package:projeto_final_flutter_2026/src/presenter/pages/components/error_box.dart';
+import 'package:projeto_final_flutter_2026/src/presenter/stores/login_store.dart';
+import 'package:projeto_final_flutter_2026/src/presenter/stores/user_store.dart';
 
 // widget da página de login
 class LoginPage extends StatefulWidget {
@@ -23,15 +25,18 @@ class _LoginPageState extends State<LoginPage> {
 
   // método para lidar com o login
   Future<void> _handleLogin() async {
-    // chamar o método de login da store
-    final success = await context.read<LoginStore>().login(
+    final loginStore = context.read<LoginStore>();
+
+    loginStore.clearError(); // limpar erro antes de tentar logar
+
+    final success = await loginStore.login(
       _usernameController.text,
       _passwordController.text,
     );
 
-    // se o login for bem-sucedido e o widget ainda estiver montado, navegar para a HomePage
     if (success && mounted) {
-      final loggedUser = context.read<LoginStore>().user;
+      final loggedUser = loginStore.user;
+
       // inicializar o UserStore com o usuário logado
       context.read<UserStore>().initUser(loggedUser);
 
@@ -71,11 +76,12 @@ class _LoginPageState extends State<LoginPage> {
 
   // construir o formulário de login
   Widget _buildLoginForm(BuildContext context) {
+    final loginStore = context.read<LoginStore>();
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Título "Entrar" dentro do painel
         const Align(
           alignment: Alignment.centerLeft,
           child: Text(
@@ -89,38 +95,27 @@ class _LoginPageState extends State<LoginPage> {
         ),
         const SizedBox(height: 24),
 
-        // Campo de texto para nome do usuário
         TextField(
           controller: _usernameController,
           style: const TextStyle(color: Colors.white),
           decoration: _inputDecoration('Username'),
-          // limpar mensagem de erro ao digitar
-          onChanged: (_) {
-            context.read<LoginStore>().clearError();
-          },
+          onChanged: (_) => loginStore.clearError(),
         ),
         const SizedBox(height: 16),
 
-        // Campo de texto para senha do usuário
         TextField(
           controller: _passwordController,
-          obscureText: true, // oculta o texto para senha
+          obscureText: true,
           style: const TextStyle(color: Colors.white),
           decoration: _inputDecoration('Password'),
-          // limpar mensagem de erro ao digitar
-          onChanged: (_) {
-            context.read<LoginStore>().clearError();
-          },
+          onChanged: (_) => loginStore.clearError(),
         ),
         const SizedBox(height: 4),
 
-        // Botão esqueceu senha
         Align(
           alignment: Alignment.centerRight,
           child: TextButton(
-            onPressed: () {
-              // ação ao pressionar esqueceu senha
-            },
+            onPressed: () {},
             child: const Text(
               'Esqueceu a senha?',
               style: TextStyle(color: Color.fromARGB(179, 255, 255, 255)),
@@ -129,59 +124,68 @@ class _LoginPageState extends State<LoginPage> {
         ),
         const SizedBox(height: 24),
 
-        // Botão entrar em formato pílula
+        // Botão entrar + loading (Observer)
         Center(
           child: SizedBox(
             width: 260,
             height: 46,
-            child: ElevatedButton(
-              onPressed: _handleLogin,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: const Color(0xFF6A1B9A),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(999),
+            child: Observer(
+              builder: (_) => ElevatedButton(
+                onPressed: loginStore.isLoading ? null : _handleLogin,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF6A1B9A),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
                 ),
-              ),
-              child: const Text(
-                'entrar',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                child: loginStore.isLoading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text(
+                        'entrar',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
               ),
             ),
           ),
         ),
         const SizedBox(height: 20),
 
-        // Exibe mensagem de erro se houver
-        if (context.watch<LoginStore>().errorMessage.isNotEmpty)
-          ErrorBox(message: context.watch<LoginStore>().errorMessage),
+        // Exibe mensagem de erro (Observer)
+        Observer(
+          builder: (_) {
+            if (loginStore.errorMessage.isEmpty) return const SizedBox.shrink();
+            return ErrorBox(message: loginStore.errorMessage);
+          },
+        ),
       ],
     );
   }
 
-  // construir a interface da página de login
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // 1) Background (repetindo)
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
                 image: AssetImage('assets/image.png'),
-                repeat: ImageRepeat.repeat, // repete em X e Y
-                fit: BoxFit.none, // mantém tamanho original do tile
+                repeat: ImageRepeat.repeat,
+                fit: BoxFit.none,
                 alignment: Alignment.topLeft,
               ),
             ),
           ),
-
-          // 2) Overlay escuro por cima
           Container(color: Colors.black.withOpacity(0.7)),
-
-          // 3) Painel central
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
